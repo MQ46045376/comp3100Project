@@ -27,3 +27,37 @@
 25: Receive QUIT
 26: Close the socket
 */
+
+package ds_sim_Client;
+
+import java.io.*;
+import java.net.*;
+
+public class Client {
+
+	private final static int SocketNumber = 50000; // change this to desired socket number
+	private final static String UserName = "someUserName"; //change this to username
+	
+	
+	public static void main(String[] args) {
+		// The commented numbers are in reference to the lines in LRR sudo code
+		// LRR = Largest Round Robin
+		try {
+			//1,2,3
+			// Create socket, init in/out streams and connect to ds-server
+			Socket s = new Socket("localhost", SocketNumber);
+			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+			DataOutputStream dout = new DataOutputStream(s.getOutputStream());
+			
+			//4,5,6
+			dout.write("HELO\n".getBytes()); //send HELO
+			dout.flush(); //Design choice: flushing after every write to ensure nothing messes up in output stream
+			
+			String msg; //msg holds the last msg sent by server
+			msg = in.readLine(); //receive OK
+			System.out.println("DS-Server: " + msg); 
+			
+			//if (msg.contains("OK")) { //should contain OK anyway
+				dout.write(("AUTH " + UserName + "\n").getBytes());
+				dout.flush();
+			//}
