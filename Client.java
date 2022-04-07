@@ -41,14 +41,17 @@ public class Client {
 
 				//10 receive JOBN JCPL NONE
 				msg = in.readLine();
-				String jobType = msg; // jobType save type of job i.e. JOBN JCPL or NONE
+				/*
+				ASSUMPTION: Client will only receive JOBN JCPL or NONE; job type will always be 4 char long
+				*/
+				String jobType = msg.substring(0, 3); // jobType save type of job i.e. JOBN JCPL or NONE
 				System.out.println("DS-Server: " + msg);
 
 				//find largest server??
 				//String[] serverSortArr = msg.split(" ");
 
 				//11 send GETS ALL
-				dout.write("GETS ALL\n".getBytes());
+				dout.write("GETS All\n".getBytes());
 				dout.flush();
 
 
@@ -68,41 +71,59 @@ public class Client {
 				int mostCores = -1; //store the largest core size; more cores = bigger server
 				int numberOfLargestServers = 0; //stores number of that server
 
-				/*
-				ASSUMPTION: all server types have unique number of cores; there won't be two different server types with same amount of cores
-				*/
+				
 				for(int i = 0; i < nRecs; i++){
 					//receive each record
 					msg = in.readLine();
 					System.out.println(msg);
 
 					//keep track of largest server type & number of server of that type
-					// split into serverType serverID state curStartTime core memory disk ...
+
+					// split into:       serverType serverID state curStartTime core memory disk ...
 					temp = msg.split(" ");
 
 					if(Integer.parseInt(temp[4]) > mostCores){ //if this server is bigger than the one on record
 						
-						
-						numberOfLargestServers = 1;
+						/*
+						ASSUMPTION: all server types have unique number of cores; server is either a bigger server or the largest server on record.
+						*/
 
-					}
+						largestServerType = temp[0];//update the largest server type
+						mostCores = Integer.parseInt(temp[4]); //update the cores to beat to become biggest server
+						numberOfLargestServers = 1; //update number of largest servers (counting the current one)
 
 
-
-
+					} else numberOfLargestServers += 1 ; //server is the one on record. Number of largest server += 1
 				}
 
+				//18
+				dout.write("OK\n".getBytes()); //send OK
+				dout.flush();
 
+				//19 
+				msg = in.readLine(); //receive msg
+				System.out.println(msg);
 
-
-
-
-
-				
-
+				//20
+				if(jobType.contains("JOBN")){ //if msg at step 10 is JOBN
+					dout.write("SCHD\n".getBytes()); //send SCHD
+					dout.flush();
+				} else{
+					dout.write("REDY\n".getBytes()); //send REDY for next instructions
+				    dout.flush();
+					msg = in.readLine();
+				}
 			}
-			dout.write(("QUIT\n").getBytes());
-			// recieves quit
+
+			//24-25
+			dout.write(("QUIT\n").getBytes()); //send QUIT
+			dout.flush();
+			
+			msg = in.readLine(); // recieves QUIT
+			System.out.println("DS-Server: " + msg);
+			
+
+			//26 close socket
 			dout.close();
 			s.close();
 		}
@@ -112,20 +133,3 @@ public class Client {
 		}
 	}
 }
-			// Create socket, init in/out streams and connect to ds-server
-			Socket s = new Socket("localhost", SocketNumber);
-			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-			DataOutputStream dout = new DataOutputStream(s.getOutputStream());
-			
-			//4,5,6
-			dout.write("HELO\n".getBytes()); //send HELO
-			dout.flush(); //Design choice: flushing after every write to ensure nothing messes up in output stream
-			
-			String msg; //msg holds the last msg sent by server
-			msg = in.readLine(); //receive OK
-			System.out.println("DS-Server: " + msg); 
-			
-			//if (msg.contains("OK")) { //should contain OK anyway
-				dout.write(("AUTH " + UserName + "\n").getBytes());
-				dout.flush();
-			//}
