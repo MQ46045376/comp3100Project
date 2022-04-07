@@ -163,6 +163,7 @@ public class Client {
 
 			// 24-25
 			dout.write(("QUIT\n").getBytes()); // send QUIT
+			System.out.println("Me: QUIT");
 			dout.flush();
 
 			msg = in.readLine(); // recieves QUIT
@@ -171,6 +172,8 @@ public class Client {
 			// 26 close socket
 			dout.close();
 			s.close();
+
+			System.out.println("Sockets closed.\n Precess terminated.");
 		}
 
 		catch (Exception e) {
