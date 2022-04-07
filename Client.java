@@ -35,6 +35,8 @@ public class Client {
 			msg = in.readLine();
 			System.out.println("DS-Server: " + msg);
 
+			int jobCounter = 0; //Count no. of jobs done (for LRR implementation)
+
 			// 8
 			while (!msg.contains("NONE")) {
 
@@ -45,7 +47,7 @@ public class Client {
 
 				// 10 receive JOBN JCPL NONE
 				msg = in.readLine();
-				if(msg.contains("NONE")){
+				if (msg.contains("NONE")) {
 					break;
 				}
 				/*
@@ -72,11 +74,9 @@ public class Client {
 				System.out.println("DS-Server: " + msg);
 
 				// if(msg.contains("DATA")){
-				// 	dout.write("OK\n".getBytes());
-				// 	System.out.println("Me: OK");
+				// dout.write("OK\n".getBytes());
+				// System.out.println("Me: OK");
 				// }
-
-				
 
 				String[] temp = msg.split(" "); // stores [DATA] [nRec] [recSize] temporarily
 				int nRecs = Integer.parseInt(temp[1]); // get ^nRec and turn it into int
@@ -89,7 +89,8 @@ public class Client {
 				String largestServerType = ""; // stores largest server type
 				int mostCores = -1; // store the largest core size; more cores = bigger server
 				int numberOfLargestServers = 0; // stores number of that server
-				String serverID = "";
+				String serverID = ""; //stores serverIDs of the largest servers separated by spaces
+				//i.e. serverID1 serverID2 ...
 
 				for (int i = 0; i < nRecs; i++) {
 					// receive each record
@@ -99,7 +100,7 @@ public class Client {
 					// keep track of largest server type & number of server of that type
 
 					// split into: serverType serverID state curStartTime core memory disk ...
-					// index 0 1 2 3 4 5 6 ...
+					// index           0           1     2        3         4    5     6 ...
 					temp = msg.split(" ");
 
 					if (Integer.parseInt(temp[4]) > mostCores) { // if this server is bigger than the one on record
@@ -112,14 +113,22 @@ public class Client {
 						largestServerType = temp[0];// update the largest server type
 						mostCores = Integer.parseInt(temp[4]); // update the cores to beat to become biggest server
 						numberOfLargestServers = 1; // update number of largest servers (counting the current one)
-						serverID = temp[2];
+						serverID = ""; //clear serverID list
+						serverID += temp[1]; //add the ID of current server on serverID list
 
-					} else if (Integer.parseInt(temp[4]) == mostCores) { // server is the one on record. Number of
-																			// largest server += 1
-						numberOfLargestServers += 1;
+					} else if (Integer.parseInt(temp[4]) == mostCores) { // server is the one on record. Number of															
+						numberOfLargestServers += 1; // largest server += 1
+
+						//add ID if serverID here is unique
+						if(!serverID.contains(temp[1])){
+							serverID = serverID + " " + temp[1];
+						}
 					} // server is smaller than the one on record: nothing happens. look at next
 						// server
 				}
+				System.out.println("serverID: " + serverID); //DEBUG
+				//note: looks like 9/10 iterations have only 1 largest server. 
+				//if that's the case, no wonder LRR is not apparent
 
 				// 18
 				dout.write("OK\n".getBytes()); // send OK
@@ -129,29 +138,32 @@ public class Client {
 				msg = in.readLine(); // receive msg
 				System.out.println(msg);
 
-				// 20
+
+				String[] listID = serverID.split(" "); //contains serverIDs of largest type
+				//i.e. [serverID1][serverID2][serverID3]...
+
+				// 20 Job scheduling
+				// NEED TO IMPLEMENT LRR
 				if (jobType[0].contains("JOBN")) { // if msg at step 10 is JOBN
+
+					//Calculate serverID to use for LRR
+					int serverToUse = jobCounter% listID.length; //gives idx to use
+					System.out.println("Server to use = " + serverToUse);
+					System.out.println("Jobcounter: " + jobCounter);
 
 					// SCHD: jobID serverType serverID
 					// JOBN: submitTime jobID estRuntime core memory disk
-					dout.write(
-							("SCHD" + " " + jobType[2] + " " + largestServerType + " " + serverID + "\n").getBytes()); // send
-																														// SCHD
-																														// jobID
-																														// serverID
-					System.out.println("Me: " + "SCHD" + " " + jobType[2] + " " + largestServerType + " " + serverID);
+					dout.write(("SCHD" + " " + jobType[2] + " " + largestServerType + " " + listID[serverToUse] + "\n").getBytes()); 
+					// send SCHD jobID serverID
+
+					System.out.println("Me: " + "SCHD" + " " + jobType[2] + " " + largestServerType + " " + listID[serverToUse]);
 					dout.flush();
 
 					// Receive "OK" for SCHD
 					msg = in.readLine();
 					System.out.println("DS-Server: " + msg);
 
-					// Reply "REDY"
-					//dout.write("REDY\n".getBytes());
-					//System.out.println("Me: REDY");
-
-					//dont need redy since sending it at start of while loop
-
+					jobCounter++ ;// update job counter
 				}
 
 				// else{
