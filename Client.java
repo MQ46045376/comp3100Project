@@ -17,7 +17,7 @@ public class Client {
 			DataOutputStream dout = new DataOutputStream(s.getOutputStream());
 
 			// 4,5
-			dout.write("HELO\n".getBytes()); // send HELO
+			dout.write("HELO\n".getBytes()); // send HELOS
 			System.out.println("Me: HELO");
 			dout.flush(); // Design choice: flushing after every write to ensure nothing messes up in
 							// output stream
@@ -55,8 +55,8 @@ public class Client {
 				 * be 4 char long
 				 */
 
-				// JOBN submitTime jobID estRuntime core memory disk
-				// index: 0 1 2 3 4 5 6
+				//       JOBN submitTime jobID estRuntime core memory disk
+				// index: 0       1        2        3      4     5     6
 				String[] jobType = msg.split(" "); // jobType save type of job i.e. JOBN JCPL or NONE
 				System.out.println("DS-Server: " + msg);
 
