@@ -47,7 +47,7 @@ public class Client {
 
 				// 10 receive JOBN JCPL NONE
 				msg = in.readLine();
-				if (msg.contains("NONE")) {
+				if (msg.contains("NONE")) { // just in case
 					break;
 				}
 				/*
@@ -60,7 +60,6 @@ public class Client {
 				String[] jobType = msg.split(" "); // jobType save type of job i.e. JOBN JCPL or NONE
 				System.out.println("DS-Server: " + msg);
 
-				// find largest server??
 				// String[] serverSortArr = msg.split(" ");
 
 				// 11 send GETS ALL
@@ -73,11 +72,6 @@ public class Client {
 				System.out.println("NOte: Should receive DATA now");
 				System.out.println("DS-Server: " + msg);
 
-				// if(msg.contains("DATA")){
-				// dout.write("OK\n".getBytes());
-				// System.out.println("Me: OK");
-				// }
-
 				String[] temp = msg.split(" "); // stores [DATA] [nRec] [recSize] temporarily
 				int nRecs = Integer.parseInt(temp[1]); // get ^nRec and turn it into int
 
@@ -85,7 +79,7 @@ public class Client {
 				dout.write("OK\n".getBytes()); // send OK
 				dout.flush();
 
-				// 14
+				// 14 FINDING LARGEST SERVER
 				String largestServerType = ""; // stores largest server type
 				int mostCores = -1; // store the largest core size; more cores = bigger server
 				int numberOfLargestServers = 0; // stores number of that server
@@ -138,7 +132,6 @@ public class Client {
 				msg = in.readLine(); // receive msg
 				System.out.println(msg);
 
-
 				String[] listID = serverID.split(" "); //contains serverIDs of largest type
 				//i.e. [serverID1][serverID2][serverID3]...
 
@@ -165,14 +158,7 @@ public class Client {
 
 					jobCounter++ ;// update job counter
 				}
-
-				// else{
-				// dout.write("REDY\n".getBytes()); //send REDY for next instructions
-				// dout.flush();
-				// msg = in.readLine();
-				// }
 			}
-
 			// 24-25
 			dout.write(("QUIT\n").getBytes()); // send QUIT
 			System.out.println("Me: QUIT");
