@@ -5,6 +5,24 @@ public class Client {
 
 	private final static int SocketNumber = 50000; // change this to desired socket number
 	private final static String UserName = "someUsername"; // change this to username
+	
+	// Function to read messages
+        public static String readMSG(BufferedReader in) throws IOException {
+        String message = in.readLine();
+        System.out.println("Server: " + message);
+        return message;
+    }
+    
+        // Fucntion to send messages
+        public static void sendMSG(String msg, DataOutputStream out) {
+        try {
+            out.write(("Client: " + msg).getBytes());
+            out.flush();
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+
+    }
 
 	public static void main(String[] args) {
 		// The commented numbers are in reference to the lines in LRR sudo code
