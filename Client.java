@@ -6,15 +6,104 @@ public class Client {
 	private final static int SocketNumber = 50000; // change this to desired socket number
 	private final static String UserName = "someUsername"; // change this to username
 	
+    // Server Class to save the info of the servers
+    public static class Server implements Comparable<Server> {
+        String type = "";
+        int id, core, mem, disk, waitingJob, runningJob;
+        
+        public Server(String type, String id, String core, String mem, String disk, String waitingJob,
+                String runningJob) {
+            this.type = type;
+            this.id = Integer.parseInt(id);
+            this.core = Integer.parseInt(core);
+            this.mem = Integer.parseInt(mem);
+            this.disk = Integer.parseInt(disk);
+            this.waitingJob = Integer.parseInt(waitingJob);
+            this.runningJob = Integer.parseInt(runningJob);
+        }
+
+        public String getType() {
+            return type;
+        }
+        
+        public void setType(String newType) {
+            this.type = newType;
+        }
+
+        public String getID() {
+            return Integer.toString(id);
+        }
+        
+        public void setID(String newID) {
+            this.id = Integer.parseInt(newID);
+        }
+
+        public String getCore() {
+            return Integer.toString(core);
+        }
+        
+        public void setCore(String newCore) {
+            this.core = Integer.parseInt(newCore);
+        }
+
+        public String getMem() {
+            return Integer.toString(mem);
+        }
+        
+        public void setMem(String newMem) {
+            this.mem = Integer.parseInt(newMem);
+        }
+
+        public String getDisk() {
+            return Integer.toString(disk);
+        }
+        
+        public void setDisk(String newDisk) {
+            this.disk = Integer.parseInt(newDisk);
+        }
+
+        public String getWaitingJobs() {
+            return Integer.toString(waitingJob);
+        }
+        
+        public void setWaitingJobs(String newWaiting) {
+            this.waitingJob = Integer.parseInt(newWaiting);
+        }
+
+        public String getRunningJobs() {
+            return Integer.toString(runningJob);
+        }
+
+        public void setRunningJobs(String newRunning) {
+            this.waitingJob = Integer.parseInt(newRunning);
+        }
+
+        @Override
+        public int compareTo(Client.Server o) {
+            // sort by core then type ascening order.
+            if (this.core - o.core == 0) {
+                return o.type.compareTo(this.type);
+            }
+            return this.core - o.core;
+        }
+    }
+	
+    
+	public static String[] parsing(String data) {
+        String delims = "[ ]+"; // set the space as the splitting element for parsing messages.
+        String[] splitData = data.split(delims);
+        return splitData;
+    }
+	
 	// Function to read messages
-        public static String readMSG(BufferedReader in) throws IOException {
+    public static String readMSG(BufferedReader in) throws IOException {
         String message = in.readLine();
         System.out.println("Server: " + message);
         return message;
     }
     
-        // Fucntion to send messages
-        public static void sendMSG(String msg, DataOutputStream out) {
+    // Fucntion to send messages
+    public static void sendMSG(String msg, DataOutputStream out) {
         try {
             out.write(("Client: " + msg).getBytes());
             out.flush();
@@ -23,7 +112,9 @@ public class Client {
         }
 
     }
-		// Inital Handshake
+    
+	
+	// Inital Handshake
     public static void doHandShake(BufferedReader in, DataOutputStream out) {
         try {
             String received = ""; // holds received message from server
@@ -49,7 +140,6 @@ public class Client {
         }
     }
 
-
 	public static void main(String[] args) {
 		// The commented numbers are in reference to the lines in LRR sudo code
 		// LRR = Largest Round Robin
@@ -65,6 +155,7 @@ public class Client {
 	            String msg = readMSG(in);
 
 			// 8
+	        int jobCounter = 0;
 			while (!msg.contains("NONE")) {
 
 				// 9 send REDY
@@ -205,4 +296,3 @@ public class Client {
 			System.out.println(e);
 		}
 	}
-}
