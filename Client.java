@@ -23,6 +23,32 @@ public class Client {
         }
 
     }
+		// Inital Handshake
+    public static void doHandShake(BufferedReader in, DataOutputStream out) {
+        try {
+            String received = ""; // holds received message from server
+
+            sendMSG("HELO\n", out); // initiate handshake by sending HELO
+
+            received = readMSG(in);
+            if (received.equals("OK")) {
+                sendMSG("AUTH Jonathan\n", out);
+            } else {
+                System.out.println("ERROR: OK was not received");
+            }
+
+            received = readMSG(in);
+            if (received.equals("OK")) {
+                sendMSG("REDY\n", out);
+            } else {
+                System.out.println("ERROR: OK was not received");
+            }
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
 
 	public static void main(String[] args) {
 		// The commented numbers are in reference to the lines in LRR sudo code
@@ -34,26 +60,9 @@ public class Client {
 			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 			DataOutputStream dout = new DataOutputStream(s.getOutputStream());
 
-			// 4,5
-			dout.write("HELO\n".getBytes()); // send HELOS
-			System.out.println("Me: HELO");
-			dout.flush(); // Design choice: flushing after every write to ensure nothing messes up in
-							// output stream
-
-			String msg; // msg holds the last msg sent by server
-			msg = in.readLine(); // receive OK
-			System.out.println("DS-Server: " + msg);
-
-			// 6: send AUTH username
-			dout.write(("AUTH " + UserName + "\n").getBytes());
-			System.out.println("Me: " + "AUTH " + UserName + "\n");
-			dout.flush();
-
-			// 7: Receive OK
-			msg = in.readLine();
-			System.out.println("DS-Server: " + msg);
-
-			int jobCounter = 0; //Count no. of jobs done (for LRR implementation)
+	            // Handshake with server
+	            doHandShake(in, dout);
+	            String msg = readMSG(in);
 
 			// 8
 			while (!msg.contains("NONE")) {
