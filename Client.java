@@ -160,7 +160,7 @@ public class Client {
                     // Schedule job
                 //if there's a job to do
 				// SCHD: jobID serverType serverID
-				// JOBN: submitTime jobID estRuntime core memory disk
+                // JOBN submitTime jobID estRuntime core memory disk
                     case "JOBN":
                         sendMSG("SCHD " + job[2] + " " + algSchd(job, in, dout) + "\n", dout);
                         break;
@@ -186,162 +186,55 @@ public class Client {
         }
 	}
 
-    //Put scheduling algorithm and finding largest server here!!!
+    //Put server info and scheduling algorithm here!!!
 	private static String algSchd(String[] job, BufferedReader in, DataOutputStream dout) {
-		while (!msg.contains("NONE")) {
-
-			// 9 send REDY
-			dout.write("REDY\n".getBytes());
-			System.out.println("Me: REDY");
-			dout.flush();
-
-			
-			msg = in.readLine();
-			if (msg.contains("NONE")) { // just in case
-				break;
-			}
-			/*
-			 * ASSUMPTION: Client will only receive JOBN JCPL or NONE; job type will always
-			 * be 4 char long
-			 */
-
-			//       JOBN submitTime jobID estRuntime core memory disk
-			// index: 0       1        2        3      4     5     6
-			String[] jobType = msg.split(" "); // jobType save type of job i.e. JOBN JCPL or NONE
-			System.out.println("DS-Server: " + msg);
-
-			// String[] serverSortArr = msg.split(" ");
-
-			// 11 send GETS ALL UPDATE: make case for gets avail
-			// Requests available server for specific jobs
-	        sendMSG("GETS Avail " + jobType[4] + " " + jobType[5] + " " + jobType[6] + "\n", dout);
-	        String msgReceived = readMSG(in);
-	        String[] Data = parsing(msgReceived);
-	        sendMSG("OK\n", dout);
-	        int totalServer;// Number of servers on system.
-
-	        // If no available servers get all servers instead
-	        if (Data[1].equals("0")) {
-	            sendMSG("GETS All\n", dout);
-	            msgReceived = readMSG(in);
-	            msgReceived = readMSG(in);
-	            Data = parsing(msgReceived);
-	            
-			// 12 receive DATA nRec recSize // e.g. DATA 5 124
-			msg = in.readLine();
-			System.out.println("NOte: Should receive DATA now");
-			System.out.println("DS-Server: " + msg);
-
-			String[] temp = msg.split(" "); // stores [DATA] [nRec] [recSize] temporarily
-			int nRecs = Integer.parseInt(temp[1]); // get ^nRec and turn it into int
-
-			// 13
-			dout.write("OK\n".getBytes()); // send OK
-			dout.flush();
-
-			// 14 FINDING LARGEST SERVER
-			String largestServerType = ""; // stores largest server type
-			int mostCores = -1; // store the largest core size; more cores = bigger server
-			int numberOfLargestServers = 0; // stores number of that server
-			String serverID = ""; //stores serverIDs of the largest servers separated by spaces
-			//i.e. serverID1 serverID2 ...
-
-			for (int i = 0; i < nRecs; i++) {
-				// receive each record
-				msg = in.readLine();
-				System.out.println(i + " " + msg);
-
-				// keep track of largest server type & number of server of that type
-
-				// split into: serverType serverID state curStartTime core memory disk ...
-				// index           0           1     2        3         4    5     6 ...
-				temp = msg.split(" ");
-
-				if (Integer.parseInt(temp[4]) > mostCores) { // if this server is bigger than the one on record
-
-					/*
-					 * ASSUMPTION: all server types have unique number of cores; server is either a
-					 * bigger server or the largest server on record.
-					 */
-
-					largestServerType = temp[0];// update the largest server type
-					mostCores = Integer.parseInt(temp[4]); // update the cores to beat to become biggest server
-					numberOfLargestServers = 1; // update number of largest servers (counting the current one)
-					serverID = ""; //clear serverID list
-					serverID += temp[1]; //add the ID of current server on serverID list
-
-				} else if (Integer.parseInt(temp[4]) == mostCores) { // server is the one on record. Number of															
-					numberOfLargestServers += 1; // largest server += 1
-
-					//add ID if serverID here is unique
-					if(!serverID.contains(temp[1])){
-						serverID = serverID + " " + temp[1];
-					}
-				} // server is smaller than the one on record: nothing happens. look at next
-					// server
-			}
-			System.out.println("serverID: " + serverID); //DEBUG
-			//note: looks like 9/10 iterations have only 1 largest server. 
-			//if that's the case, no wonder LRR is not apparent
-
-			// 18
-			dout.write("OK\n".getBytes()); // send OK
-			dout.flush();
-
-			// 19
-			msg = in.readLine(); // receive msg
-			System.out.println(msg);
-
-			String[] listID = serverID.split(" "); //contains serverIDs of largest type
-			//i.e. [serverID1][serverID2][serverID3]...
-
-			// 20 Job scheduling
-			// NEED TO IMPLEMENT LRR
-			if (jobType[0].contains("JOBN")) { // if msg at step 10 is JOBN
-
-				//Calculate serverID to use for LRR
-				int serverToUse = jobCounter% listID.length; //gives idx to use
-				System.out.println("Server to use = " + serverToUse);
-				System.out.println("Jobcounter: " + jobCounter);
-
-
-				dout.write(("SCHD" + " " + jobType[2] + " " + largestServerType + " " + listID[serverToUse] + "\n").getBytes()); 
-				// send SCHD jobID serverID
-
-				System.out.println("Me: " + "SCHD" + " " + jobType[2] + " " + largestServerType + " " + listID[serverToUse]);
-				dout.flush();
-
-				// Receive "OK" for SCHD
-				msg = in.readLine();
-				System.out.println("DS-Server: " + msg);
-
-				jobCounter++ ;// update job counter
-			}
-		}
-		// 24-25
-		dout.write(("QUIT\n").getBytes()); // send QUIT
-		System.out.println("Me: QUIT");
-		dout.flush();
-
-		msg = in.readLine(); // recieves QUIT
-		System.out.println("DS-Server: " + msg);
-
-		// 26 close socket
-		dout.close();
-		s.close();
-
-		System.out.println("Sockets closed.\n Precess terminated.");
-	}
-
-    } catch (Exception e) {
-        System.out.println(e);
-    }
 		
+		int serverCounter;// Number of servers on system.
 		
-	}
-	
-	
-	
+		// 11-13 UPDATE: make case for gets avail
+		// Requests available server for specific jobs
+        sendMSG("GETS Avail " + job[4] + " " + job[5] + " " + job[6] + "\n", dout);
+        String msgReceived = readMSG(in);
+        String[] Data = parsing(msgReceived);
+        sendMSG("OK\n", dout);
+        
+        if (Data[1].equals("0")) {// If no available servers
+            sendMSG("GETS All\n", dout); //get all servers instead
+            msgReceived = readMSG(in);
+            msgReceived = readMSG(in);
+            Data = parsing(msgReceived); //receive server info
+
+            sendMSG("OK\n", dout);
+            serverCounter = Integer.parseInt(Data[1]);
+        } else {
+            serverCounter = Integer.parseInt(Data[1]);
+        }
+
+        // FINDING SERVER INFO
+        // MAKING SERVER ARRAY
+        Server[] updatedServerList = new Server[serverCounter];
+
+        // Loop through all servers to create server list
+        for (int i = 0; i < serverCounter; i++) {
+            msgReceived = readMSG(in);
+            String[] updatedStringList = parsing(msgReceived);
+            updatedServerList[i] = new Server(updatedStringList[0], updatedStringList[1], updatedStringList[4],
+                    updatedStringList[5], updatedStringList[6], updatedStringList[7], updatedStringList[8]);
+        }//now should have a list of servers 
+        
+        // Code stuck at '.' output from server
+        // Need to catch it at end of data stream.
+        sendMSG("OK\n", dout);
+        msgReceived = readMSG(in);
+
+        //DECIDING WHICH SERVER TO USE
+        //TODO
+        
+        
+        //need to catch 
+        return null;	
+		}	
 	
 	
 }
+
