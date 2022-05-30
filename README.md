@@ -1,5 +1,6 @@
-This is my comp3100 project stage 1.
+This is my comp3100 project stage 1 and 2.
 
+Stage 1:
 To run ds-sim server:
 ./ds-server -c ../../configs/sample-configs/ds-sample-config01.xml -v brief -n
 
@@ -15,4 +16,10 @@ To run the S1Demo.tar tests:
 
 Terminate the process any time by Ctrl + C
 
+Stage 2: 
+chmod +x stage2-test-86
+copy ds-server and Client.class into stage2 test directory
+compile with "javac Client"
+run test with:
+./stage2-test-x86 "java Client" -o tt -n
 
