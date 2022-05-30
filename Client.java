@@ -1,11 +1,13 @@
+package ds_sim_Client;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class Client {
-
+public class Clients {
+	
 	private final static int SocketNumber = 50000; // change this to desired socket number
-	private final static String UserName = "someUsername"; // change this to username
+	private final static String UserName = "Yuelei"; // change this to username
 	
     // Server Class to save the info of the servers
     public static class Server implements Comparable<Server> {
@@ -73,7 +75,7 @@ public class Client {
         }
 
         @Override // sort by core then type ascening order.
-        public int compareTo(Client.Server cs) {
+        public int compareTo(Clients.Server cs) {
             if (this.core - cs.core == 0) {
                 return cs.type.compareTo(this.type);
             }
@@ -96,19 +98,18 @@ public class Client {
     }
     
     // Fucntion to send messages
-    public static void sendMSG(String msg, DataOutputStream out) {
+    public static void sendMSG(String msg, DataOutputStream dout) {
         try {
-            out.write(("Client: " + msg).getBytes());
-            out.flush();
+            dout.write(("Client: " + msg).getBytes());
+            dout.flush();
         } catch (IOException e) {
             System.out.println(e);
         }
 
     }
-    
-	
-	// Inital Handshake
-    public static void initHandshake(BufferedReader in, DataOutputStream out) {
+
+    // Inital Handshake
+    public static void doHandShake(BufferedReader in, DataOutputStream out) {
         try {
             String received = ""; // holds received message from server
 
@@ -116,7 +117,7 @@ public class Client {
 
             received = readMSG(in);
             if (received.equals("OK")) {
-                sendMSG("AUTH Jonathan\n", out);
+                sendMSG("AUTH "+UserName+"\n", out);
             } else {
                 System.out.println("ERROR: OK was not received");
             }
@@ -132,7 +133,8 @@ public class Client {
             System.out.println(e);
         }
     }
-      
+    
+    
     // Scheduling algorithm
     public static String algSchd(String job[], BufferedReader in, DataOutputStream dout) throws IOException {
     	
@@ -175,9 +177,9 @@ public class Client {
         sendMSG("OK\n", dout);
         msgReceived = readMSG(in);
 
-        //DECIDING WHICH SERVER TO USE
-        //idea: use least busy server
-        int lowestWaiting = 0;  // Tracks the lowest number of waiting jobs on servers, when server starts waiting jobs is always 0
+        // Tracks the lowest number of waiting jobs on servers, when server starts
+        // waiting jobs is always 0
+        int lowestWaiting = 0;  
         int jobCore = Integer.parseInt(job[4]);
         int jobMem = Integer.parseInt(job[5]);
         int jobDisk = Integer.parseInt(job[6]);
@@ -188,8 +190,7 @@ public class Client {
 
         // loop through all servers to find the server that matches the requiremnts with
         // the least waiting and running jobs
-        int loopVar = serverCounter - 1; //if out of bounds check here
-        for (int i = loopVar; i >= 0; i--) {
+        for (int i = serverCounter - 1; i >= 0; i--) {
             if (jobCore <= updatedServerList[i].core) {  // Checks server cores and id
             	//&& updatedServerList[i].id % 2 != 0
             	//observation: much less resource usage/cost when using only half the servers
@@ -210,33 +211,27 @@ public class Client {
         }
         return serverInfo;
     }
+  
     
+    
+    //remade to look as clean/concise as possible
+    public static void main(String[] args) {
+        try {
+            Socket s = new Socket("localhost", SocketNumber);
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            DataOutputStream dout = new DataOutputStream(s.getOutputStream());
+            String rcvd = "";
 
-	public static void main(String[] args) {
-		// The commented numbers are in reference to the lines in LRR sudo code
-		// LRR = Largest Round Robin
-		try {
-			// 1,2,3
-			// Create socket, init in/out streams and connect to ds-server
-			Socket s = new Socket("localhost", SocketNumber);
-			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-			DataOutputStream dout = new DataOutputStream(s.getOutputStream());
+            // Handshake with server
+            doHandShake(in, dout);
+            rcvd = readMSG(in);
 
-	            // Handshake with server
-	            initHandshake(in, dout);
-	            String msg = readMSG(in); //stores msg from server
-	            
-			// 8
-            while (!msg.equals("NONE")) {
+            while (!rcvd.equals("NONE")) {
                 // Get job id and job type for switch statement and scheduling
-                String[] job = parsing(msg); //returns parsed job info
-                
-                // 10 receive JOBN JCPL NONE
+                String[] job = parsing(rcvd);
+
                 switch (job[0]) {
                     // Schedule job
-                //if there's a job to do
-				// SCHD: jobID serverType serverID
-                // JOBN submitTime jobID estRuntime core memory disk
                     case "JOBN":
                         sendMSG("SCHD " + job[2] + " " + algSchd(job, in, dout) + "\n", dout);
                         break;
@@ -249,7 +244,7 @@ public class Client {
                         sendMSG("REDY\n", dout);
                         break;
                 }
-                msg = readMSG(in);
+                rcvd = readMSG(in);
             }
 
             sendMSG("QUIT\n", dout);
@@ -260,7 +255,5 @@ public class Client {
         } catch (Exception e) {
             System.out.println(e);
         }
-	}
-	
-	
+    }
 }
