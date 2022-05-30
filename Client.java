@@ -135,6 +135,85 @@ public class Client {
             System.out.println(e);
         }
     }
+      
+    // Scheduling algorithm
+    public static String algSchd(String job[], BufferedReader in, DataOutputStream dout) throws IOException {
+    	
+    	int serverCounter;// Number of servers on system.
+        
+    	// 11-13 UPDATE: make case for gets avail
+    	// Requests available server for specific jobs
+        sendMSG("GETS Avail " + job[4] + " " + job[5] + " " + job[6] + "\n", dout);
+        String msgReceived = readMSG(in);
+        String[] Data = parsing(msgReceived);
+        sendMSG("OK\n", dout);
+        
+        // If no available servers get all servers instead
+        if (Data[1].equals("0")) {// If no available servers
+            sendMSG("GETS All\n", dout); //get all servers instead
+            msgReceived = readMSG(in);
+            msgReceived = readMSG(in);
+            Data = parsing(msgReceived); //receive server info
+
+            sendMSG("OK\n", dout);
+            serverCounter = Integer.parseInt(Data[1]);
+        } else {
+            serverCounter = Integer.parseInt(Data[1]);
+        }
+
+        // FINDING SERVER INFO
+        // MAKING SERVER ARRAY
+        Server[] updatedServerList = new Server[serverCounter];
+
+        // Loop through all servers to create server list
+        for (int i = 0; i < serverCounter; i++) {
+            msgReceived = readMSG(in);
+            String[] updatedStringList = parsing(msgReceived);
+            updatedServerList[i] = new Server(updatedStringList[0], updatedStringList[1], updatedStringList[4],
+                    updatedStringList[5], updatedStringList[6], updatedStringList[7], updatedStringList[8]);
+        }//should end up with a list of servers
+        
+        // Bug Fix: Code stuck at '.' output from server
+        // Need to catch it at end of data stream.
+        sendMSG("OK\n", dout);
+        msgReceived = readMSG(in);
+
+        //DECIDING WHICH SERVER TO USE
+        //idea: use least busy server
+        int lowestWaiting = 0;  // Tracks the lowest number of waiting jobs on servers, when server starts waiting jobs is always 0
+        int jobCore = Integer.parseInt(job[4]);
+        int jobMem = Integer.parseInt(job[5]);
+        int jobDisk = Integer.parseInt(job[6]);
+        
+        //info about the server (core, memory, disk) in SCHD form
+        String serverInfo = "";
+        serverInfo = updatedServerList[serverCounter - 1].getType() + " " + updatedServerList[serverCounter - 1].getID();
+
+        // loop through all servers to find the server that matches the requiremnts with
+        // the least waiting and running jobs
+        int loopVar = serverCounter - 1; //if out of bounds check here
+        for (int i = loopVar; i >= 0; i--) {
+            if (jobCore <= updatedServerList[i].core) {  // Checks server cores and id
+            	//&& updatedServerList[i].id % 2 != 0
+            	//observation: much less resource usage/cost when using only half the servers
+            	//but longer turnaround time
+                // Checks server memory
+                if (jobMem <= updatedServerList[i].mem) {
+                    // Checks server Disk
+                    if (jobDisk <= updatedServerList[i].disk) {
+                        // Checks for the server with the lowest waiting jobs
+                        if (lowestWaiting >= updatedServerList[i].waitingJob) {
+                            // Updates the waiting jobs to the current lowest
+                        	lowestWaiting = updatedServerList[i].waitingJob;
+                            serverInfo = updatedServerList[i].getType() + " " + updatedServerList[i].getID();
+                        }
+                    }
+                }
+            }
+        }
+        return serverInfo;
+    }
+    
 
 	public static void main(String[] args) {
 		// The commented numbers are in reference to the lines in LRR sudo code
@@ -185,56 +264,6 @@ public class Client {
             System.out.println(e);
         }
 	}
-
-    //Put server info and scheduling algorithm here!!!
-	private static String algSchd(String[] job, BufferedReader in, DataOutputStream dout) {
-		
-		int serverCounter;// Number of servers on system.
-		
-		// 11-13 UPDATE: make case for gets avail
-		// Requests available server for specific jobs
-        sendMSG("GETS Avail " + job[4] + " " + job[5] + " " + job[6] + "\n", dout);
-        String msgReceived = readMSG(in);
-        String[] Data = parsing(msgReceived);
-        sendMSG("OK\n", dout);
-        
-        if (Data[1].equals("0")) {// If no available servers
-            sendMSG("GETS All\n", dout); //get all servers instead
-            msgReceived = readMSG(in);
-            msgReceived = readMSG(in);
-            Data = parsing(msgReceived); //receive server info
-
-            sendMSG("OK\n", dout);
-            serverCounter = Integer.parseInt(Data[1]);
-        } else {
-            serverCounter = Integer.parseInt(Data[1]);
-        }
-
-        // FINDING SERVER INFO
-        // MAKING SERVER ARRAY
-        Server[] updatedServerList = new Server[serverCounter];
-
-        // Loop through all servers to create server list
-        for (int i = 0; i < serverCounter; i++) {
-            msgReceived = readMSG(in);
-            String[] updatedStringList = parsing(msgReceived);
-            updatedServerList[i] = new Server(updatedStringList[0], updatedStringList[1], updatedStringList[4],
-                    updatedStringList[5], updatedStringList[6], updatedStringList[7], updatedStringList[8]);
-        }//now should have a list of servers 
-        
-        // Code stuck at '.' output from server
-        // Need to catch it at end of data stream.
-        sendMSG("OK\n", dout);
-        msgReceived = readMSG(in);
-
-        //DECIDING WHICH SERVER TO USE
-        //TODO
-        
-        
-        //need to catch 
-        return null;	
-		}	
 	
 	
 }
-
