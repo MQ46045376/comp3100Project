@@ -26,7 +26,6 @@ public class Client {
 		public String getType() {
 			return type;
 		}
-
 		public void setType(String newType) {
 			this.type = newType;
 		}
@@ -34,7 +33,6 @@ public class Client {
 		public String getID() {
 			return Integer.toString(id);
 		}
-
 		public void setID(String newID) {
 			this.id = Integer.parseInt(newID);
 		}
@@ -42,7 +40,6 @@ public class Client {
 		public String getCore() {
 			return Integer.toString(core);
 		}
-
 		public void setCore(String newCore) {
 			this.core = Integer.parseInt(newCore);
 		}
@@ -50,7 +47,6 @@ public class Client {
 		public String getMem() {
 			return Integer.toString(mem);
 		}
-
 		public void setMem(String newMem) {
 			this.mem = Integer.parseInt(newMem);
 		}
@@ -58,7 +54,6 @@ public class Client {
 		public String getDisk() {
 			return Integer.toString(disk);
 		}
-
 		public void setDisk(String newDisk) {
 			this.disk = Integer.parseInt(newDisk);
 		}
@@ -66,7 +61,6 @@ public class Client {
 		public String getWaitingJobs() {
 			return Integer.toString(waitingJob);
 		}
-
 		public void setWaitingJobs(String newWaiting) {
 			this.waitingJob = Integer.parseInt(newWaiting);
 		}
@@ -74,7 +68,6 @@ public class Client {
 		public String getRunningJobs() {
 			return Integer.toString(runningJob);
 		}
-
 		public void setRunningJobs(String newRunning) {
 			this.waitingJob = Integer.parseInt(newRunning);
 		}
@@ -114,7 +107,7 @@ public class Client {
 	}
 
 	// Inital Handshake
-	public static void initHandshake(BufferedReader in, DataOutputStream out) {
+	public static void initHandshake(DataOutputStream out, BufferedReader in) {
 		try {
 			String received = ""; // holds received message from server
 
@@ -141,7 +134,8 @@ public class Client {
 
 	// Scheduling algorithm
 	public static String algSchd(String job[], BufferedReader in, DataOutputStream dout) throws IOException {
-
+		
+		//FINDING NUMBER OF SERVERS AVALIABLE
 		int serverCounter;// Number of servers on system.
 
 		// 11-13 UPDATE: make case for gets avail
@@ -181,6 +175,7 @@ public class Client {
 		sendMSG("OK\n", dout);
 		msgReceived = readMSG(in);
 
+		
 		// DECIDING WHICH SERVER TO USE
 		// idea: use least busy server
 		int lowestWaiting = 0; // Tracks the lowest number of waiting jobs on servers, when server starts
@@ -198,16 +193,17 @@ public class Client {
 		// the least waiting and running jobs
 		int loopVar = serverCounter - 1; // if out of bounds check here
 		for (int i = loopVar; i >= 0; i--) {
-			if (jobCore <= updatedServerList[i].core) { // Checks server cores and id
-				// && updatedServerList[i].id % 2 != 0
-				// observation: much less resource usage/cost when using only half the servers
-				// but longer turnaround time
-				// Checks server memory
-				if (jobMem <= updatedServerList[i].mem) {
-					// Checks server Disk
-					if (jobDisk <= updatedServerList[i].disk) {
-						// Checks for the server with the lowest waiting jobs
-						if (lowestWaiting >= updatedServerList[i].waitingJob) {
+			boolean coreCheck = (jobCore <= updatedServerList[i].core);  // Checks server cores a&& id
+			// && updatedServerList[i].id % 2 != 0
+			boolean memoryCheck = (jobMem <= updatedServerList[i].mem); // Checks server memory
+			boolean diskCheck =(jobDisk <= updatedServerList[i].disk); // Checks server disk specs
+			boolean jobQueueCheck = (lowestWaiting >= updatedServerList[i].waitingJob);// Checks for the server with the lowest waiting jobs
+			// observation: much less resource usage/cost when using only half the servers
+			// but longer turnaround time
+			if (coreCheck) {
+				if (memoryCheck) {		
+					if (diskCheck) {	
+						if (jobQueueCheck) {
 							// Updates the waiting jobs to the current lowest
 							lowestWaiting = updatedServerList[i].waitingJob;
 							serverInfo = updatedServerList[i].getType() + " " + updatedServerList[i].getID();
@@ -230,7 +226,7 @@ public class Client {
 			DataOutputStream dout = new DataOutputStream(s.getOutputStream());
 
 			// Handshake with server
-			initHandshake(in, dout);
+			initHandshake(dout, in);
 			String msg = readMSG(in); // stores msg from server
 
 			// 8
@@ -268,5 +264,4 @@ public class Client {
 			System.out.println(e);
 		}
 	}
-
 }
