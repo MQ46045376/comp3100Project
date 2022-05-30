@@ -1,9 +1,6 @@
-package ds_sim_Client;
-
 import java.io.*;
 import java.net.*;
-
-import ds_sim_Client.Client.Server;
+import java.util.*;
 
 public class Client {
 
